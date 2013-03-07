@@ -5,7 +5,7 @@ function [sinusoids, sinIdx] = rcic_make_sinusoids(img_s)
 % orientations and phases. Furhter, it generates a matrix of the same size
 % with indexing number for each individual sinusoid pattern.
 %
-% ex.call: [s, d] = rcic_make_sinusoids([512 512]);
+% ex.call: [sinusoids, sinIdx] = rcic_make_sinusoids([512 512]);
 
 %settings for sinusoid generation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
