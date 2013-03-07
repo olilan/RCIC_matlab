@@ -1,0 +1,83 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf340
+\cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 Cochin;}
+{\colortbl;\red255\green255\blue255;\red42\green42\blue42;\red21\green106\blue206;}
+\vieww22120\viewh17180\viewkind0
+\deftab560
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab560\sl336\slmult1\pardirnatural
+
+\f0\fs34 \cf0 Reverse Correlation Image Classification Matlab Scripts\
+===============================================\
+\
+2011 v2\
+\
+By Ron Dotsch (r.dotsch@psych.ru.nl) and Oliver Langner (oliver.langner@uni-jena.de)\
+\
+Scripts \'a9 2010 Oliver Langner, adapted by Ron Dotsch\
+\
+===============================================\
+\
+\
+The Matlab scripts in this package allow you to generate reverse correlation stimuli and analyze classification data of those stimuli. You need the image processing toolbox and statistics toolbox in order to run these scripts.\
+\
+To generate stimuli, run the rcic_generate_stimuli function in rcic_generate_stimuli.m. See the .m file for function parameters. This function will save important parameters for the analysis stage in rcic_stimuli.mat. Be sure to move this file to your data folder. \
+\
+Have the images judged on the property of interest.  NOTE: It's easiest to use the scripts for analysis  if the set of stimuli that you present is a contiguous sequence starting from the first generated stimulus. Make sure the data files (comma-separated, with header, one data file for each participant) include the sequence number of the generated stimuli and the response.  Then make the following adjustments:\
+\
+In rcic_analysis.m, adjust the settings in the top of the file.\
+\
+In rcic_import_data, on line 14, adjust the keys array to match the values in the response column of your data file. These can be numeric or string. Then, on line 29, adjust the settings for reading the data file format appropriately. On line 35, adjust the name of the column that contains the stimulus sequence numbers to sort the data in order of stimulus sequence numbers (this is very important). The output of this script is saved in a .mat file for each participant and is used later in other functions.\
+\
+If you presented one stimulus per trial, edit rcic_calc_participant_contrasts.m. Adjust the basic settings in the beginning of the file. The cond array contains which responses to visualized in recoded fashion (linking to the order of the keys array in rcic_import_data). If you want to visualize only the classifications with the first response key, the array should consist of only 1. If you want to visualize the combination of response key 1 and 2, as well as the combination of 3 and 4, and only 1 and only 4, the cond array should look as follows:\
+\
+cond = \{\
+	1\
+	4\
+	[1 2]\
+	[3 4]\
+\}\
+\
+This could be useful when you had four response options, such as Probably Dutch, Possibly Dutch, Possibly German, and Probably German.  Label all the entries in the cond array in the m_par_descr array below the cond array.\
+\
+If you presented two images per trials, do the same as described in how to adjust rcic_calc_participant_contrasts.m, but instead, adjust  rcic_calc_participant_contrasts_2IFC.m. Additionally, adjust the complement array to match the cond array. In most cases, you need only to put the key that maps to the original image being selected in cond, and the key that maps to the negative image being selected in complement.\
+\
+Then, go back to rcic_analysis.m and start running the cells sequentially. \
+\
+Run rcic_create_stimuli_file only if you used older versions of the stimulus generation script and need to recreate the stimuli_file. Adapt this function to your needs (in it's current form, it assumes you used the default random number generator of Matlab, without a seed, but reset before generating the stimuli).\
+\
+Depending on the task you used, you either run rcic_calc_participant_contrasts or rcic_calc_participant_contrasts_2IFC.\
+\
+The final function will visualize CI's for each separate participant. If you want to create group averages, you will need to write a function that averages participants' m_par arrays based on your own condition variables. \
+\
+\
+\
+=============================================\
+\
+These scripts are based on the following work:\
+\
+Dotsch, R., Wigboldus, D. H. J., Langner, O., & Van Knippenberg, A. (2008).\'a0{\field{\*\fldinst{HYPERLINK "http://ron.dotsch.org/wp-content/uploads/2010/12/2008-Dotsch-et-al-Psych-Science.pdf"}}{\fldrslt Ethnic out-group faces are biased in the prejudiced mind}}.\'a0Psychological Science, 19, 978-980.\
+\
+=============================================\
+\
+For more information, please take a look at these papers:\
+\
+Dotsch, R., & Todorov, A. (in press). {\field{\*\fldinst{HYPERLINK "http://ron.dotsch.org/wp-content/uploads/2011/10/Social-Psychological-and-Personality-Science-2011-Dotsch.pdf"}}{\fldrslt Reverse correlating social face perception}}. Social Psychological and Personality Science.\
+\
+Todorov, A., Dotsch, R., Wigboldus, D. H. J., & Said, C. P. (in press). {\field{\*\fldinst{HYPERLINK "http://ron.dotsch.org/wp-content/uploads/2011/10/Social-and-Personality-Psychology-Compass-2011-Todorov.pdf"}}{\fldrslt Data-driven methods for modeling social perception}}. Social and Personality Psychology Compass.\
+\
+Karremans, J. C., Dotsch, R., & Corneille, O. (in press). {\field{\*\fldinst{HYPERLINK "http://ron.dotsch.org/wp-content/uploads/2011/08/Karremans_Dotsch_Corneille_inpress.pdf"}}{\fldrslt Romantic relationship status biases memory of faces of attractive opposite-sex others: Evidence from a reverse-correlation paradigm}}. Cognition.\
+\
+Imhoff, R., Dotsch, R., Bianchi, M., Banse, R., & Wigboldus, D. H. J. (in press). {\field{\*\fldinst{HYPERLINK "http://ron.dotsch.org/wp-content/uploads/2011/07/Imhoff-Dotsch-Bianch-et-al._in-press.pdf"}}{\fldrslt Facing Europe: Visualizing spontaneous ingroup projection}}. Psychological Science.\'a0\
+\
+=============================================\
+\
+The rafd_average.jpg image is an average calculated from the RaFD database. More information:\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab560\sl336\slmult1
+\cf2 Langner, O.,\'a0
+\b Dotsch, R.
+\b0 , Bijlstra, G., Wigboldus, D.H.J., Hawk, S.T., & van Knippenberg, A. (2010).\'a0{\field{\*\fldinst{HYPERLINK "http://ron.dotsch.org/wp-content/uploads/2010/12/Langner_etal_2010_CEM.pdf"}}{\fldrslt \cf3 Presentation and validation of the Radboud Faces Database}}
+\i , Cognition & Emotion, 24 (8),
+\i0  1377\'971388. ({\field{\*\fldinst{HYPERLINK "http://www.rafd.nl/"}}{\fldrslt \cf3 download database}})\cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab560\sl336\slmult1\pardirnatural
+\cf0 \
+}
