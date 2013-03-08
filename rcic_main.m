@@ -8,7 +8,7 @@ gen_cfg = struct( ...
     'bf', 'rafd_average.jpg', ...   %base face image
     'blur', False, ...              %don't blur base face
     'symm', True, ...               %generate also inverse image
-    'prefix', 'teststim', ...       %name prefix for images ...
+    'prefix', 'teststim', ...       %name prefix for images
     'nrS', 5, ...                   %number of stimuli
     'mask', [] ...                  %no masking of stimuli
     );
@@ -20,3 +20,14 @@ gen_cfg = struct( ...
 %generate stimuli
 rcic_generate_stimuli(gen_cfg);
 
+%% data analysis %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%make config settings for data analysis
+avg_cfg = struct( ...
+    'datadir', pwd, ...             %path to data directory
+    'stim_col', {'stimNr'}, ...     %column name of stimulus number column
+    
+    );
+
+%import data to matlab
+rcic_import_data(avg_cfg);
