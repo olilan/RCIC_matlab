@@ -9,11 +9,12 @@ function img_norm = norm_gsimage_lm(img, d_mean, d_max, varargin)
 %
 % ex. call: img_norm = norm_gsimage_lm(img, 128, 127, maskl, 10);
 
-%look for provided parameters
+%look for provided parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 switch length(varargin)
     case 0
         %default mask=whole image; no bgcol
-        maskl = true(size(img));
+        maskl = [];
         bgcol = NaN;
     case 1
         %take mask from input; no bgcol
@@ -25,10 +26,18 @@ switch length(varargin)
         bgcol = varargin{2};
 end
 
+%check, if mask is empty (=whole image mask)
+if isempty(maskl), maskl = true(size(img)); end
+
 %compute intensity-mean and -range for area defined by maskl %%%%%%%%%%%%%%%%%
 
+%get mean
 img_mean = mean(img(maskl));
+
+% TODO Can this ever happen?
 if (numel(img_mean) > 1), img_mean = mean(img_mean); end
+
+%get maximum range of intensities
 img_range = max(abs(img(maskl) - img_mean));
 
 %transform intensity and range to scale_mean and scale_max %%%%%%%%%%%%%%%%%%%
