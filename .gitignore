@@ -3,3 +3,4 @@
 stimuli/
 CIs/
 *.tmproj
+.DS_Store
