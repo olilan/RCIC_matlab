@@ -1,0 +1,5 @@
+*.tmproj
+*~
+stimuli/
+CIs/
+*.tmproj
