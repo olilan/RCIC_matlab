@@ -4,10 +4,11 @@
 
 %make config settings for image generation
 gen_cfg = struct( ...
-    'genImg', True, ...             %render images
-    'bf', 'rafd_average.jpg', ...   %base face image
-    'blur', False, ...              %don't blur base face
-    'symm', True, ...               %generate also inverse image
+    'root', pwd, ...                %root directory
+    'genImg', true, ...             %render images
+    'bf', fullfile(pwd,'rafd_average.jpg'), ...   %base face image
+    'blur', false, ...              %don't blur base face
+    'symm', true, ...               %generate also inverse image
     'prefix', 'teststim', ...       %name prefix for images
     'nrS', 5, ...                   %number of stimuli
     'mask', [] ...                  %no masking of stimuli
@@ -20,14 +21,54 @@ gen_cfg = struct( ...
 %generate stimuli
 rcic_generate_stimuli(gen_cfg);
 
-%% data analysis %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% image generation from existing data file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%make config settings for data analysis
-avg_cfg = struct( ...
-    'datadir', pwd, ...             %path to data directory
-    'stim_col', {'stimNr'}, ...     %column name of stimulus number column
-    
+%make settings fro image generation
+gen_from_file_cfg = struct( ...
+    'root', pwd, ...                %root directory
+    'rcicS', 'rcic_stimuli.mat' ... %name of rcic stimulus file
     );
 
-%import data to matlab
-rcic_import_data(avg_cfg);
+%generate stimuli
+rcic_generate_stimuli(gen_from_file_cfg);
+
+%% import behavioral data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%make config settings for importing data
+import_cfg = struct( ...
+    'datadir', pwd, ...             %path to data directory
+    'stim_col', 'stimNr' ...        %column name of stimulus number column
+    );
+
+%import data to matlab and store in file rcic_data.mat
+rcic_import_data(import_cfg);
+
+%% calculate average contrast for participants %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%make config settings for calculating averages
+avg_cfg = struct( ...
+    'datadir', pwd, ...             %path to data directory
+    'resp_col', 'resp' ...          %name of response column in datasets
+    );
+
+%conditions to calculate averages for; each row is one average; first column
+%is condition name, second and third are cell arrays of all responses
+%defining one condition
+avg_cfg.cond = { ...
+    {'Condition1', {1,2}} ...
+    {'Condition2', {3,4}} ...
+    {'DiffCI', {1,2}, {3,4}}
+};
+
+%calculate average contrasts
+rcic_calc_average_contrasts(avg_cfg);
+
+%% generate visualizations of CIs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+vis_cfg = struct( ...
+    'datadir', pwd, ...             %path to data directory
+    'plot', true ...                %do you want to see plots?
+    );
+
+%export CIs
+rcic_visualize_participant_images(vis_cfg);
