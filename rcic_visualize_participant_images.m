@@ -1,5 +1,5 @@
-function rcic_visualize_participant_images(cfg)
-% function rcic_visualize_participant_images(cfg)
+function rcic_visualize_participant_images(data_dir, plotflag, varargin)
+% function rcic_visualize_participant_images(data_dir, plotflag, ['all'])
 %
 % The function takes the results from the function
 % rcic_calc_participant_contrasts and visualizes the normalized
@@ -8,117 +8,112 @@ function rcic_visualize_participant_images(cfg)
 % 
 % Copyright: Oliver Langner, September 2010, adapted by Ron Dotsch
 
-%check configuration parameters and set defaults %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%basic settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%data directory
-if ~isfield(cfg, 'datadir'), cfg.datadir = pwd; end
+%noise weight in rcic image
+nWeight = .5;
 
-%data file
-if ~isfield(cfg, 'rcicD'), cfg.rcicD = 'rcic_data.mat'; end
+%get data files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%stimulus file
-if ~isfield(cfg, 'rcicS'), cfg.rcicS = 'rcic_stimuli.mat'; end
-
-%noise weight
-if ~isfield(cfg, 'nWeight'), cfg.nWeight = .5; end
-
-%output directory for visualized images
-if ~isfield(cfg, 'outdir')
+if ((~isempty(varargin)) && strcmp(varargin{1}, 'all'))
     
-    %get output directory
-    cfg.outdir = uigetdir(pwd, 'Pick output directory');
+    %get names of all participant files
+    fname = dir(fullfile(data_dir, 'rcdata*.mat'));
+    fname = {fname.name};
+
+else
     
-    if (cfg.outdir == 0)
-        fprintf('No output directory picked! Aborted...\n');
-        return
-    end
+    %let user choose the files to import
+    [fname, data_dir] = uigetfile(fullfile(data_dir, 'rcdata*.mat'),...
+        'Pick data files!', 'MultiSelect', 'on');
+    
+    %make sure, fname is a cellstr
+    if (ischar(fname)), fname = cellstr(fname); end
 end
 
-%should we also plot?
-if ~isfield(cfg, 'plot'), cfg.plot = false; end
+%get image info of stimuli %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%load needed data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%try to find stimulus file here
+stim_dir = data_dir;
+stim_file = 'rcic_stimuli.mat';
 
-%load behavioral data
-load(fullfile(cfg.datadir, cfg.rcicD), 'm_par', 'avg_cfg', 'data');
+%check, if standard stimulus file is there
+if ~exist(fullfile(stim_dir, stim_file), 'file')
+    
+    %let user choose stimulus file
+    [stim_file, stim_dir] = uigetfile(...
+        fullfile(data_dir, 'rcic_stimuli.mat'), 'Pick stimulus file!');
+    
+    %check, if we got a char
+    if (ischar(stim_file)), stim_file = cellstr(stim_file); end
+end
 
-%get number of participants
-nrP = size(m_par, 3);
-
-%retrieve data filenames for naming images
-names = cellfun(@get_name, data);
-
-%load contrast weights from stimulus file
-load(fullfile(cfg.datadir, cfg.rcicS), 'img', 'sinIdx', 'sindusoids');
+%load image of base face, sinusoid indices and sinusoids
+img = struct2array(load(fullfile(stim_dir, stim_file), 'img'));
+sinIdx = struct2array(load(fullfile(stim_dir, stim_file), 'sinIdx'));
+sinusoids = struct2array(load(fullfile(stim_dir, stim_file), 'sinusoids'));
 
 %visualize reversed classification images %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%get number of images to be generated per participant = nr of conditions
-nrC = size(m_par, 2);
-
-for p = 1 : nrP %loop over participant files
+for f = 1 : length(fname) %loop over participant files
     
-    if (cfg.plot)
+    fprintf('Generating classification images for file %s...\n', fname{f});
+    
+    %load mean parameter data
+    m_par = struct2array(load(fullfile(data_dir, fname{f}), 'm_par'));
+    m_par_descr = struct2array(load(fullfile(data_dir, fname{f}),...
+        'm_par_descr'));
+    
+    %get number of images
+    nrI = size(m_par, 2);
+    
+    if (plotflag)
         
         %get number of rows and columns for subplot
-        nrR = round(sqrt(nrC));
-        nrC = ceil(nrC / nrR);
+        nrR = round(sqrt(nrI));
+        nrC = ceil(nrI / nrR);
         
-        %make new figure window (span whole screen)
-        figure('Name', names{p});
+        %make new figure window
+        figure('Name', fname{f});
         set(gcf, 'Position', get(0, 'Screensize'));
     end
     
-    for c = 1 : nrC %loop over conditions
+    for s = 1 : nrI %loop over images
         
-        %retrieve condition label
-        cLabel = avg_cfg.cond{c}{1};
-        
-        fprintf('        %s...', cLabel);
+        fprintf('        %s...', m_par_descr{s});
         
         %get current column of parameters
-        curr_par = m_par(:, c, p);
+        curr_par = m_par(:, s);
         
         %get weighted sinusoid mixture
         sinW = mean(sinusoids .* curr_par(sinIdx), 3);
         
-        %{
-            TODO Check, why we scale differently here.
-        %}
         %scale noise constant to 0-1
         sinW = (sinW - min(sinW(:))) / (max(sinW(:)) - min(sinW(:)));
         
-        %{
-            TODO Check, if we should use a mask here, too.
-        %}
         %combine noise and image, then normalize image
-        stim = (1 - cfg.nWeight) * img + cfg.nWeight * sinW;
-        stim = norm_gsimage_lm(stim, 128, 127);
+        stim1 = (1 - nWeight) * img + nWeight * sinW;
+        stim1 = norm_gsimage_lm(stim1, 128, 127);
         
         %make filename for image
-        fname = sprintf('%s_%s.bmp', names{f}, cLabel);
+        ci_name = sprintf('%s_%s.bmp',...
+            strtok(fname{f}, '.'),...
+            m_par_descr{s});
         
         %save classification image as file
-        imwrite(uint8(stim), fullfile(cfg.outdir, fname), 'bmp');
+        imwrite(uint8(stim1), ci_name, 'bmp');
         fprintf('Done!\n');
         
-        if (cfg.plot)
+        if (plotflag)
             
             %make subplot
-            subplot(nrR, nrC, c);
+            subplot(nrR, nrC, s);
             
             %draw image
-            image(stim);
+            image(stim1);
             axis image off;
             colormap(gray(256));
-            title(cLabel);
+            title(m_par_descr{s});
         end
     end
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [name] = get_name(data)
-
-%split path and keep only filename
-[~, name, ~] = fileparts(data.Properties.Description);
