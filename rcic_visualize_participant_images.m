@@ -10,59 +10,44 @@ function rcic_visualize_participant_images(cfg)
 
 %check configuration parameters and set defaults %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%data directory
-if ~isfield(cfg, 'datadir'), cfg.datadir = pwd; end
+%structure with default settings
+defaults = struct( ...
+    'root', pwd, ...            %root directory
+    'nWeight', .5, ...          %weight of sinusoids in CIs
+    'CI_dir', 'CIs', ...        %directory for CI export
+    'plot', false ...           %want to see plots also?
+    );
 
-%data file
-if ~isfield(cfg, 'rcicD'), cfg.rcicD = 'rcic_data.mat'; end
-
-%stimulus file
-if ~isfield(cfg, 'rcicS'), cfg.rcicS = 'rcic_stimuli.mat'; end
-
-%noise weight
-if ~isfield(cfg, 'nWeight'), cfg.nWeight = .5; end
-
-%output directory for visualized images
-if ~isfield(cfg, 'outdir')
-    
-    %get output directory
-    cfg.outdir = uigetdir(pwd, 'Pick output directory');
-    
-    if (cfg.outdir == 0)
-        fprintf('No output directory picked! Aborted...\n');
-        return
-    end
-end
-
-%should we also plot?
-if ~isfield(cfg, 'plot'), cfg.plot = false; end
+%set defaults not defined in cfg
+cfg = join_configs(defaults, cfg);
 
 %load needed data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%load behavioral data
-load(fullfile(cfg.datadir, cfg.rcicD), 'm_par', 'avg_cfg', 'data');
+%load needed data
+load(fullfile(cfg.root, 'rcic_data.mat'), ...
+    'm_par', 'avg_cfg', 'data', 'img', 'sinIdx', 'sinusoids');
 
-%get number of participants
-nrP = size(m_par, 3);
+%get number of conditions and participants
+[~, nrC, nrP] = size(m_par);
 
-%retrieve data filenames for naming images
-names = cellfun(@get_name, data, 'UniformOuput', false);
-
-%load contrast weights from stimulus file
-load(fullfile(cfg.datadir, cfg.rcicS), 'img', 'sinIdx', 'sinusoids');
+%retrieve data filenames for naming classification images
+names = cellfun(@get_name, data, 'UniformOutput', false);
 
 %visualize reversed classification images %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%get number of images to be generated per participant = nr of conditions
-nrC = size(m_par, 2);
+%get full path to CI_dir
+CI_dir = fullfile(cfg.root, cfg.CI_dir);
+
+%check, if CI_dir exists
+if ~exist(CI_dir, 'dir'), mkdir(CI_dir); end
 
 for p = 1 : nrP %loop over participant files
     
     if (cfg.plot)
         
         %get number of rows and columns for subplot
-        nrR = round(sqrt(nrC));
-        nrC = ceil(nrC / nrR);
+        spR = round(sqrt(nrC));
+        spC = ceil(nrC / spR);
         
         %make new figure window (span whole screen)
         figure('Name', names{p});
@@ -74,41 +59,31 @@ for p = 1 : nrP %loop over participant files
         %retrieve condition label
         cLabel = avg_cfg.cond{c}{1};
         
-        fprintf('        %s...', cLabel);
-        
         %get current column of parameters
         curr_par = m_par(:, c, p);
         
         %get weighted sinusoid mixture
         sinW = mean(sinusoids .* curr_par(sinIdx), 3);
         
-        %{
-            TODO Check, why we scale differently here.
-        %}
         %scale noise constant to 0-1
-        sinW = (sinW - min(sinW(:))) / (max(sinW(:)) - min(sinW(:)));
+        sinW = (sinW - min(sinW(:))) / range(sinW(:));
         
-        %{
-            TODO Check, if we should use a mask here, too.
-        %}
-        %combine noise and image, then normalize image
-        stim = (1 - cfg.nWeight) * img + cfg.nWeight * sinW;
-        stim = norm_gsimage_lm(stim, 128, 127);
+        %combine noise and image to CI, then normalize CI
+        CI = (1 - cfg.nWeight) * img + cfg.nWeight * sinW;
+        CI = norm_gsimage_lm(CI, 128, 127);
         
         %make filename for image
-        fname = sprintf('%s_%s.bmp', names{p}, cLabel);
+        fname = sprintf('CI_%s_%s.bmp', names{p}, cLabel);
         
         %save classification image as file
-        imwrite(uint8(stim), fullfile(cfg.outdir, fname), 'bmp');
-        fprintf('Done!\n');
+        imwrite(uint8(CI), fullfile(CI_dir, fname), 'bmp');
         
         if (cfg.plot)
-            
             %make subplot
-            subplot(nrR, nrC, c);
+            subplot(spR, spC, c);
             
             %draw image
-            image(stim);
+            image(CI);
             axis image off;
             colormap(gray(256));
             title(cLabel);

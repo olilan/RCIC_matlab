@@ -7,115 +7,66 @@ function rcic_generate_stimuli(cfg)
 % by the user. For each stimulus, two images are generated, ones with the
 % sinusoid noise added, and once with the inverted sinusoid noise added.
 %
-% TODO Change description of cfg parameters
-% Input:
-%        nrS          number of stimuli to generate for each base face
-%        blur         should we blur base face?
-%        symm         when true, will generate negative images in addition to
-%                     originals
-%        seed         seed value used by random generator for making the
-%                     random sinusoid contrasts
-%        prefix       prefix for stimulus names
-%
 % example call: rcic_generate_stimuli([]);
-
-%should we import settings and data from existing dataset? %%%%%%%%%%%%%%%%%%%
-
-%first, check whether we got a root directory
-if ~isfield(cfg, 'root'), cfg.root = pwd; end
-
-%can we load settings from file?
-if isfield(cfg, 'rcicS')
-    
-    fprintf('Loading settings and data from RCIC file %s...',...
-        fullfile(cfg.root, cfg.rcicS));
-    
-    %load all data from file
-    load(fullfile(cfg.root, cfg.rcicS));
-    
-    fprintf('Done!\');
-end
 
 %check configuration parameters and set defaults %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%random number generator seed
-if ~isfield(cfg, 'seed')
-    
-    %init by current time
-    rng('shuffle');
-    
-    %read current start state after init and store seed
-    s = rng;
-    cfg.seed = s.Seed;
-end
+%init random number generator with current time
+rng_state = rng('shuffle');
 
-%should we generate images?
-if ~isfield(cfg, 'genImg'), cfg.genImg = true; end
+%structure with default settings
+defaults = struct( ...
+    'root', pwd, ...                %root directory
+    'seed', rng_state.Seed, ...     %seed value for random numbers
+    'genImg', true, ...             %render images?
+    'nrS', 5, ...                   %number of stimuli
+    'blur', false, ...              %blue the base face?
+    'symm', false, ...              %generate symmetric noise images?
+    'prefix', 'rcicstim', ...       %noise image name prefix
+    'nWeight', .5, ...              %noise weight
+    'stim_dir', 'stim' ...          %directory for generated stimuli
+    );
 
-%number of stimuli to generate
-if cfg.genImg && ~isfield(cfg, 'nrS'), cfg.nrS = 5; end
-
-%should we blur base face?
-if ~isfield(cfg, 'blur'), cfg.blur = false; end
-
-%should we generate also images with negative noise?
-if ~isfield(cfg, 'symm'), cfg.symm = false; end
-
-%prefix for stimulus names
-if ~isfield(cfg, 'prefix'), cfg.prefix = 'rcicstim'; end
-
-%noise weight
-if ~isfield(cfg, 'nWeight'), cfg.nWeight = .5; end
+%set defaults not defined in cfg
+cfg = join_configs(defaults, cfg);
 
 %base face to use
 if ~isfield(cfg, 'bf')
     
     %ask user for base face
-    [bname, bpath] = uigetfile('*.jpg', 'Pick Base Face Image');
+    [fname, fpath] = uigetfile( ...
+        {'*.jpg;*.tif;*.png;*.gif;*.bmp','Image Files'}, ...
+        'Pick Base Face Image', cfg.root);
     
-    if (bname == 0) %user picked no image
-        fprintf('No base face picked!\n');
-        return
-    else
-        %store full path to base face
-        cfg.bf = fullfile(bpath, bname);
-        
-    end
+    %user picked no image
+    if (fname == 0), error('No base face picked!\n'); end
+    
+    %store full path to base face
+    cfg.bf = fullfile(fpath, fname);
 end
 
-%base face name
-if ~isfield(cfg, 'bf_name')
-    %store name stem
-    [~, cfg.bf_name, ~] = fileparts(cfg.bf);
-end
+%base face name stem
+[~, cfg.bf_name, ~] = fileparts(cfg.bf);
 
 %mask for image
 if ~isfield(cfg, 'mask')
     
     %ask user for base face
-    [mname, mpath] = uigetfile('*.jpg', 'Pick Mask Image');
+    [fname, fpath] = uigetfile( ...
+        {'*.jpg;*.tif;*.png;*.gif;*.bmp','Image Files'}, ...
+        'Pick Mask Image', cfg.root);
     
-    if (mname == 0) %user picked no mask
-        fprintf('No mask image picked!\n');
-        return
-    else
-        cfg.mask = fullfile(mpath, mname);
-    end
-end
-
-%target directory
-if ~isfield(cfg, 'targdir')
-    
-    %get target directory
-    cfg.targdir = uigetdir(pwd, 'Pick stimulus directory');
-    
-    if (cfg.targdir == 0)
-        fprintf('No target directory picked!\n');
-        return
-    end
+    %user picked no mask
+    if (fname == 0), error('No mask image picked!\n'); end
+        
+    %store full path to mask image
+    cfg.mask = fullfile(fpath, fname);
 end
 
 %some output before we start %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%construct full path to stim_dir
+stim_dir = fullfile(cfg.root, cfg.stim_dir);
 
 %for translating boolean to text output
 bText = {'No', 'Yes'};
@@ -129,25 +80,17 @@ fprintf('\tBlurring base face: %s\n', bText{cfg.blur+1});
 if ischar(cfg.mask), fprintf('\tMask image: %s\n', cfg.mask); end
 fprintf('\tGenerating images: %s\n', bText{cfg.genImg+1});
 fprintf('\tNumber of generated noise patterns: %d\n', cfg.nrS);
-if cfg.genImg
+
+if (cfg.genImg)
     fprintf('\tImage file prefix: %s\n', cfg.prefix);
     fprintf('\tGenerating symmetric images: %s\n', bText{cfg.symm+1});
-    fprintf('\tTarget directory for images: %s\n', cfg.targdir);
+    fprintf('\tStimulus directory for images: %s\n', stim_dir);
 end
 
 %ask user whether to start %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%init reply variable
-reply = '';
-
-while ~ismember(reply, {'Y','N','YES','NO'})
-    %ask user whether to proceed
-    reply = upper(input('\nProceed with these settings? [Y/N]', 's'));
-end
-
-if ismember(reply, {'N','NO'})
-    fprintf('Stimulus generation aborted!\n');
-    return
+if ~askyesno('\nProceed with these settings? [Y/N] ')
+    error('Stimulus generation aborted!');
 end
 
 %get base face image %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -155,34 +98,22 @@ end
 fprintf('Loading base face image %s...', cfg.bf);
 
 %load base face
-img = imread(cfg.bf, 'jpg');
+img = double(imread(cfg.bf));
 
-if (size(img, 3) > 1) %color image?
-    
-    fprintf('grayscaling...');
-    
+if (ndims(img) > 2)
     %make grayscale if necessary
     img = rgb2gray(img);
 end
 
-%change to double
-img = double(img);
-
 if (cfg.blur)
-    
-    fprint('blurring...');
-    
-    %make kernel for image blurring
-    kernel = fspecial('gaussian', 10, 10);
-    
-    %blur base face
-    img = imfilter(img, kernel);
+    %blur base face with kernel
+    img = imfilter(img, fspecial('gaussian', 10, 10));
+    fprint('blurred...');
 end
 
-fprintf('normalizing...');
-
 %scale to range 0-1
-img = (img - min(img(:))) / (max(img(:)) - min(img(:)));
+img = (img - min(img(:))) / range(img(:));
+fprintf('normalized...');
 
 fprintf('Done!\n');
 
@@ -193,17 +124,9 @@ cfg.imgS = size(img);
 
 fprintf('Getting mask...');
 
-if ~(cfg.mask) %mask set to False by user
-    
-    %mask is whole image
-    mask = true(cfg.imgS);
-
-elseif ischar(cfg.mask) %mask filename
-    
-    %load mask image
-    mask = imread(cfg.mask, 'jpg');
-    %???mask = mask > 30;
-
+if ischar(cfg.mask)
+    %load mask image and make logical by threshold
+    mask = imread(cfg.mask) > 30;
 else
     %take mask directly from input
     mask = cfg.mask;
@@ -213,15 +136,12 @@ fprintf('Done!\n');
 
 %get sinusoids %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if ~exist('sinusoids', 'var') || ~exist('sinIdx', 'var')
-    
-    fprintf('Generating sinusoids...');
-    
-    %generate sinusoids and indices
-    [sinusoids, sinIdx] = rcic_make_sinusoids(cfg.imgS);
-    
-    fprintf('Done!\n');
-end
+fprintf('Generating sinusoids...');
+
+%generate sinusoids and indices
+[sinusoids, sinIdx] = rcic_make_sinusoids(cfg.imgS);
+
+fprintf('Done!\n');
 
 %get number of unique sinusoid parameters
 nrInd = length(unique(sinIdx));
@@ -245,12 +165,15 @@ fprintf('Done!\n');
 gen_cfg = cfg;
 
 %save data
-save(fullfile(cfg.targdir, 'rcic_stimuli.mat'), 'contrast', 'sinIdx',...
+save(fullfile(cfg.root, 'rcic_data.mat'), 'contrast', 'sinIdx',...
     'sinusoids', 'img', 'mask', 'gen_cfg');
 
 %generate noise stimuli %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if (cfg.genImg)
+    
+    %check, if directory exists
+    if ~exist(stim_dir, 'dir'), mkdir(stim_dir); end
     
     fprintf('Generating %d stimuli...', cfg.nrS);
     
@@ -270,7 +193,7 @@ if (cfg.genImg)
         
         %normalize and write noisy image
         noisy = norm_gsimage_lm(noisy, 128, 127, mask);
-        imwrite(uint8(noisy), fullfile(cfg.targdir, fname), 'bmp');
+        imwrite(uint8(noisy), fullfile(stim_dir, fname), 'bmp');
         
         if (cfg.symm) %we also want to save the inv version
             
@@ -280,7 +203,7 @@ if (cfg.genImg)
             
             %normalize and write invert image
             noisy_inv = norm_gsimage_lm(noisy_inv, 128, 127, mask);
-            imwrite(uint8(noisy_inv), fullfile(cfg.targdir, fname), 'bmp');
+            imwrite(uint8(noisy_inv), fullfile(stim_dir, fname), 'bmp');
         end
         
         %update waitbar
@@ -295,8 +218,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [stim1, stim2] = rcic_make_noisy_stimuli(img, contrast,...
-    nWeight, sinusoids, indices)
+function [stim1, stim2] = rcic_make_noisy_stimuli(img, contrast, nWeight, ...
+                                                  sinusoids, indices)
 % function [stim1, stim2] = rcic_make_noisy_stimuli(img, contrast,...
 %                                    nWeight, sinusoids, indices)
 %

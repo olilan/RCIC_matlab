@@ -10,19 +10,22 @@ function rcic_import_data(cfg)
 
 %check configuration parameters and set defaults %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%data directory
-if ~isfield(cfg, 'datadir'), cfg.datadir = pwd; end
+%structure with default settings
+defaults = struct( ...
+    'root', pwd, ...                %root directory
+    'data_dir', 'data', ...         %directory containing data
+    'stim_col', 'StimNr', ...       %name of stimulus number column
+    'delim', ',' ...                %data colum delimiter
+    );
 
-%stimulus column
-if ~isfield(cfg, 'stim_col'), cfg.stim_col = 'stimulusnumber2'; end
-
-%delimiter for csv file
-if ~isfield(cfg, 'delim'), cfg.delim = ','; end
+%set defaults not defined in cfg
+cfg = join_configs(defaults, cfg);
 
 %let user choose the files to import %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[fname, cfg.datadir] = uigetfile(fullfile(cfg.datadir, '*.csv'), ...
-    'Select csv files to import', 'MultiSelect', 'on');
+[fname, cfg.data_dir] = uigetfile({'*.csv','CSV Files'}, ...
+    'Select data files to import', fullfile(cfg.root, cfg.data_dir), ...
+    'MultiSelect', 'on');
 
 %import files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -38,11 +41,11 @@ drawnow;
 for f = 1 : length(fname) %loop over data files
     
     %read csv file with header
-    data{f} = dataset('File', fullfile(cfg.datadir, fname{f}), ...
+    data{f} = dataset('File', fullfile(cfg.data_dir, fname{f}), ...
         'delimiter', cfg.delim);
     
     %add file source
-    data{f}.Properties.Description = fullfile(cfg.datadir, fname{f});
+    data{f}.Properties.Description = fullfile(cfg.data_dir, fname{f});
     
     %sort in order of stimulus sequence number
     data{f} = sortrows(data{f}, cfg.stim_col);
@@ -67,12 +70,12 @@ end
 
 %save data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-fprintf('Saving data to %s...', fullfile(cfg.datadir, 'rcic_data.mat'));
+fprintf('Adding data to rcic_data.mat...');
 
 %rename cfg to prevent overwriting
 import_cfg = cfg;
 
 %save data
-save(fullfile(cfg.datadir, 'rcic_data.mat'), 'data', 'import_cfg');
+save(fullfile(cfg.root, 'rcic_data.mat'), 'data', 'import_cfg', '-append');
 
 fprintf('Done!\n');

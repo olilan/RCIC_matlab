@@ -8,26 +8,15 @@ function rcic_calc_average_contrasts(cfg)
 
 %check configuration parameters and set defaults %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%data directory
-if ~isfield(cfg, 'datadir'), cfg.datadir = pwd; end
+%structure with default settings
+defaults = struct( ...
+    'root', pwd, ...                        %root directory
+    'resp_col', 'Response', ...             %column name of response column
+    'cond', {{'Condition1', {1}}} ...       %condition definition
+    );
 
-%data file
-if ~isfield(cfg, 'rcicD'), cfg.rcicD = 'rcic_data.mat'; end
-
-%stimulus file
-if ~isfield(cfg, 'rcicS'), cfg.rcicS = 'rcic_stimuli.mat'; end
-
-%stimulus column
-if ~isfield(cfg, 'resp_col'), cfg.stim_col = 'resp'; end
-
-%conditions to calculate averages for
-if ~isfield(cfg, 'cond')
-    cfg.cond = { ...
-        {'Condition1', {1,2}} ...
-        {'Condition2', {3,4}} ...
-        {'DiffCI', {1,2}, {3,4}}
-    };
-end
+%set defaults not defined in cfg
+cfg = join_configs(defaults, cfg);
 
 %number of conditions
 nrC = length(cfg.cond);
@@ -35,13 +24,10 @@ nrC = length(cfg.cond);
 %load needed data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %load behavioral data
-load(fullfile(cfg.datadir, cfg.rcicD), 'data');
+load(fullfile(cfg.root, 'rcic_data.mat'), 'data', 'contrast');
 
 %get number of participants
 nrP = length(data);
-
-%load contrast weights from stimulus file
-load(fullfile(cfg.datadir, cfg.rcicS), 'contrast');
 
 %calculate mean contrast weights %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -54,7 +40,7 @@ for p = 1 : nrP %loop over participants
     for c = 1 : nrC %loop over conditions
         
         %get index of trials matching condition
-        idx1 = find_matching_trials(data{p}.(cfg.resp_col), cfg.cond{c}{2});
+        idx1 = find_matching(data{p}.(cfg.resp_col), cfg.cond{c}{2});
         
         if (length(cfg.cond{c}) == 2) %only one condition
             
@@ -64,7 +50,7 @@ for p = 1 : nrP %loop over participants
         else %difference between conditions
             
             %get index of trials matching complement condition
-            idx2 = find_matching_trials(data{p}.(resp_col), cfg.cond{c}{3});
+            idx2 = find_matching(data{p}.(cfg.resp_col), cfg.cond{c}{3});
             
             %calculate mean difference parameters
             m_par(:, c, p) = mean([contrast(:, idx1) -contrast(:, idx2)], 2);
@@ -76,23 +62,22 @@ fprintf('Done!\n');
 
 %save mean parameters to file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-fprintf('Saving mean parameters to file %s...', ...
-    fullfile(cfg.datadir, cfg.rcicD));
+fprintf('Adding mean parameters to rcic_data.mat...');
 
 %rename cfg to prevent overwriting
 avg_cfg = cfg;
 
 %append average parameters
-save(fullfile(cfg.datadir, cfg.rcicD), 'm_par', 'avg_cfg', '-append');
+save(fullfile(cfg.root, 'rcic_data.mat'), 'm_par', 'avg_cfg', '-append');
 
 fprintf('Done!\n');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [idx] = find_matching_trials(data, cond_resp)
+function [idx] = find_matching(data, cond_resp)
 
 %get fit of actual and desired responses
-tmp = cellfun(@(x) data == x, cond_resp, 'UniformOuput', false);
+tmp = cellfun(@(x) data == x, cond_resp, 'UniformOutput', false);
 
 %get index of trials with at least one matching response
 idx = any(cat(2, tmp{:}), 2);

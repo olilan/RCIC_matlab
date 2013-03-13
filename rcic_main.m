@@ -1,16 +1,21 @@
 %Change and store this setting file for each experiment.
 
+%root directory, where all data and images are stored
+root = pwd;
+
 %% image generation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %make config settings for image generation
 gen_cfg = struct( ...
+    'root', root, ...               %root directory
     'genImg', true, ...             %render images
-    'bf', 'rafd_average.jpg', ...   %base face image
+    'nrS', 5, ...                   %number of stimuli
     'blur', false, ...              %don't blur base face
     'symm', true, ...               %generate also inverse image
+    'bf', 'rafd_average.jpg', ...   %base face image
     'prefix', 'teststim', ...       %name prefix for images
-    'nrS', 5, ...                   %number of stimuli
-    'mask', [] ...                  %no masking of stimuli
+    'mask', [], ...                 %no masking of stimuli
+    'stim_dir', 'stim' ...          %directory for generated stimuli
     );
 
 %uncomment next line and place needed seed, in case you need to recreate
@@ -20,23 +25,14 @@ gen_cfg = struct( ...
 %generate stimuli
 rcic_generate_stimuli(gen_cfg);
 
-%% image generation from existing data file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%make settings fro image generation
-gen_from_file_cfg = struct( ...
-    'root', pwd, ...                %root directory
-    'rcicS', 'rcic_stimuli.mat' ... %name of rcic stimulus file
-    );
-
-%generate stimuli
-rcic_generate_stimuli(gen_from_file_cfg);
-
 %% import behavioral data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %make config settings for importing data
 import_cfg = struct( ...
-    'datadir', pwd, ...             %path to data directory
-    'stim_col', 'stimNr' ...        %column name of stimulus number column
+    'root', root, ...               %root directory
+    'data_dir', 'data', ...         %path to data directory
+    'stim_col', 'StimNr', ...       %column name of stimulus number column
+    'delim', ',' ...                %column delimiter in data file
     );
 
 %import data to matlab and store in file rcic_data.mat
@@ -46,8 +42,8 @@ rcic_import_data(import_cfg);
 
 %make config settings for calculating averages
 avg_cfg = struct( ...
-    'datadir', pwd, ...             %path to data directory
-    'resp_col', 'resp' ...          %name of response column in datasets
+    'root', root, ...               %root directory
+    'resp_col', 'Response' ...      %name of response column in datasets
     );
 
 %conditions to calculate averages for; each row is one average; first column
@@ -65,7 +61,9 @@ rcic_calc_average_contrasts(avg_cfg);
 %% generate visualizations of CIs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 vis_cfg = struct( ...
-    'datadir', pwd, ...             %path to data directory
+    'root', root, ...               %root directory
+    'nWeight', .5, ...              %weight of sinusoids in CIs ...
+    'CI_dir', 'CIs', ...            %directory, where CIs are exported to
     'plot', true ...                %do you want to see plots?
     );
 

@@ -26,19 +26,20 @@ switch length(varargin)
         bgcol = varargin{2};
 end
 
-%check, if mask is empty (=whole image mask)
-if isempty(maskl), maskl = true(size(img)); end
+%get the area neede for normalizing
+if isempty(maskl)
+    tmp = img(:);
+else
+    tmp = img(maskl);
+end
 
 %compute intensity-mean and -range for area defined by maskl %%%%%%%%%%%%%%%%%
 
 %get mean
-img_mean = mean(img(maskl));
-
-% TODO Can this ever happen?
-if (numel(img_mean) > 1), img_mean = mean(img_mean); end
+img_mean = mean(tmp);
 
 %get maximum range of intensities
-img_range = max(abs(img(maskl) - img_mean));
+img_range = max(abs(tmp - img_mean));
 
 %transform intensity and range to scale_mean and scale_max %%%%%%%%%%%%%%%%%%%
 
@@ -50,10 +51,4 @@ img_norm = (img_norm .* d_max) + d_mean;
 
 %deal with parts outside the masked area %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if (isnan(bgcol))
-    %restore original image-parts
-    img_norm(~maskl) = img(~maskl);
-else
-    %give background outside mask color bgcol
-    img_norm(~maskl) = bgcol;
-end
+if ~(isnan(bgcol)), img_norm(~maskl) = bgcol; end
