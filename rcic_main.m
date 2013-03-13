@@ -4,9 +4,8 @@
 
 %make config settings for image generation
 gen_cfg = struct( ...
-    'root', pwd, ...                %root directory
     'genImg', true, ...             %render images
-    'bf', fullfile(pwd,'rafd_average.jpg'), ...   %base face image
+    'bf', 'rafd_average.jpg', ...   %base face image
     'blur', false, ...              %don't blur base face
     'symm', true, ...               %generate also inverse image
     'prefix', 'teststim', ...       %name prefix for images

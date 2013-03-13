@@ -38,11 +38,11 @@ drawnow;
 for f = 1 : length(fname) %loop over data files
     
     %read csv file with header
-    data{f} = dataset('File', fullfile(fpath, fname{f}), ...
+    data{f} = dataset('File', fullfile(cfg.datadir, fname{f}), ...
         'delimiter', cfg.delim);
     
     %add file source
-    data{f}.Properties.Description = fullfile(fpath, fname{f});
+    data{f}.Properties.Description = fullfile(cfg.datadir, fname{f});
     
     %sort in order of stimulus sequence number
     data{f} = sortrows(data{f}, cfg.stim_col);

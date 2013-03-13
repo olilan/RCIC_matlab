@@ -38,7 +38,7 @@ nrC = length(cfg.cond);
 load(fullfile(cfg.datadir, cfg.rcicD), 'data');
 
 %get number of participants
-nrP = size(data, 3);
+nrP = length(data);
 
 %load contrast weights from stimulus file
 load(fullfile(cfg.datadir, cfg.rcicS), 'contrast');
@@ -48,13 +48,13 @@ load(fullfile(cfg.datadir, cfg.rcicS), 'contrast');
 fprintf('Calculating mean contrast parameters...');
 
 %init container for mean parameters (weights x conditions x participants)
-m_par = zeros(size(contrast, 1), nrC, nrS);
+m_par = zeros(size(contrast, 1), nrC, nrP);
 
 for p = 1 : nrP %loop over participants
     for c = 1 : nrC %loop over conditions
         
         %get index of trials matching condition
-        idx1 = find_matching_trials(data{p}.(resp_col), cfg.cond{c}{2});
+        idx1 = find_matching_trials(data{p}.(cfg.resp_col), cfg.cond{c}{2});
         
         if (length(cfg.cond{c}) == 2) %only one condition
             
@@ -77,13 +77,13 @@ fprintf('Done!\n');
 %save mean parameters to file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 fprintf('Saving mean parameters to file %s...', ...
-    fullfile(cfg.data_dir, cfg.rcicD));
+    fullfile(cfg.datadir, cfg.rcicD));
 
 %rename cfg to prevent overwriting
 avg_cfg = cfg;
 
 %append average parameters
-save(fullfile(data_dir, cfg.rcicD), 'm_par', 'avg_cfg', '-append');
+save(fullfile(cfg.datadir, cfg.rcicD), 'm_par', 'avg_cfg', '-append');
 
 fprintf('Done!\n');
 
@@ -92,7 +92,7 @@ fprintf('Done!\n');
 function [idx] = find_matching_trials(data, cond_resp)
 
 %get fit of actual and desired responses
-tmp = cellfun(@(x) data == x, cond_resp);
+tmp = cellfun(@(x) data == x, cond_resp, 'UniformOuput', false);
 
 %get index of trials with at least one matching response
-idx = any(cat(tmp, 2), 2);
+idx = any(cat(2, tmp{:}), 2);

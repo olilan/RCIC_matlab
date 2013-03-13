@@ -241,9 +241,12 @@ fprintf('Done!\n');
 
 %save stimulus data to file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%rename config to avoid confusion
+gen_cfg = cfg;
+
 %save data
 save(fullfile(cfg.targdir, 'rcic_stimuli.mat'), 'contrast', 'sinIdx',...
-    'sinusoids', 'img', 'mask', 'cfg');
+    'sinusoids', 'img', 'mask', 'gen_cfg');
 
 %generate noise stimuli %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

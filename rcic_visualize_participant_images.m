@@ -46,10 +46,10 @@ load(fullfile(cfg.datadir, cfg.rcicD), 'm_par', 'avg_cfg', 'data');
 nrP = size(m_par, 3);
 
 %retrieve data filenames for naming images
-names = cellfun(@get_name, data);
+names = cellfun(@get_name, data, 'UniformOuput', false);
 
 %load contrast weights from stimulus file
-load(fullfile(cfg.datadir, cfg.rcicS), 'img', 'sinIdx', 'sindusoids');
+load(fullfile(cfg.datadir, cfg.rcicS), 'img', 'sinIdx', 'sinusoids');
 
 %visualize reversed classification images %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -96,7 +96,7 @@ for p = 1 : nrP %loop over participant files
         stim = norm_gsimage_lm(stim, 128, 127);
         
         %make filename for image
-        fname = sprintf('%s_%s.bmp', names{f}, cLabel);
+        fname = sprintf('%s_%s.bmp', names{p}, cLabel);
         
         %save classification image as file
         imwrite(uint8(stim), fullfile(cfg.outdir, fname), 'bmp');
