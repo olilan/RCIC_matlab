@@ -170,50 +170,55 @@ save(fullfile(cfg.root, 'rcic_data.mat'), 'contrast', 'sinIdx',...
 
 %generate noise stimuli %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if (cfg.genImg)
+fprintf('Generating %d stimuli...', cfg.nrS);
+
+%preallocate memory for all images
+stim.img = zeros([cfg.imgS cfg.nrS], 'uint8');
+stim.name = cell(cfg.nrS, 1);
+stim = repmat({stim}, 2, 1);
+
+%make waitbar
+wbh = waitbar(0, 'Generating Stimuli');
+drawnow;
+
+for n = 1 : cfg.nrS %loop over number of trials
     
-    %check, if directory exists
-    if ~exist(stim_dir, 'dir'), mkdir(stim_dir); end
+    %generate stimulus images with original and inverted noise
+    [noisy, noisy_inv] = rcic_make_noisy_stimuli(img, contrast(:, n),...
+        cfg.nWeight, sinusoids, sinIdx);
     
-    fprintf('Generating %d stimuli...', cfg.nrS);
+    %normalize images and store
+    stim{1}.img(:,:,n) = norm_gsimage_lm(noisy, 128, 127, mask);
+    stim{2}.img(:,:,n) = norm_gsimage_lm(noisy_inv, 128, 127, mask);
     
-    %make waitbar
-    wbh = waitbar(0, 'Generating Stimuli');
-    drawnow;
+    %generate and store filenames
+    stim{1}.name{n} = sprintf('%s_%s_%d_%03d_0.bmp', ...
+        cfg.prefix, cfg.bf_name, cfg.seed, n);
+    stim{2}.name{n} = sprintf('%s_%s_%d_%03d_1.bmp', ...
+        cfg.prefix, cfg.bf_name, cfg.seed, n);
     
-    for n = 1 : cfg.nrS %loop over number of trials
-        
-        %generate stimulus images with original and inverted noise
-        [noisy, noisy_inv] = rcic_make_noisy_stimuli(img, contrast(:, n),...
-            cfg.nWeight, sinusoids, sinIdx);
-        
-        %make filename for noisy image
-        fname = sprintf('%s_%s_%d_%03d_0.bmp',...
-            cfg.prefix, cfg.bf_name, cfg.seed, n);
-        
-        %normalize and write noisy image
-        noisy = norm_gsimage_lm(noisy, 128, 127, mask);
-        imwrite(uint8(noisy), fullfile(stim_dir, fname), 'bmp');
-        
-        if (cfg.symm) %we also want to save the inv version
-            
-            %make filename for noisy_inv image
-            fname = sprintf('%s_%s_%d_%03d_1.bmp',...
-                cfg.prefix, cfg.bf_name, cfg.seed, n);
-            
-            %normalize and write invert image
-            noisy_inv = norm_gsimage_lm(noisy_inv, 128, 127, mask);
-            imwrite(uint8(noisy_inv), fullfile(stim_dir, fname), 'bmp');
-        end
-        
-        %update waitbar
-        waitbar(n / cfg.nrS, wbh);
-    end
-    
-    %close waitbar
-    close(wbh);
-    
-    fprintf('Done!\n');
+    %update waitbar
+    waitbar(n / cfg.nrS, wbh);
+end
+
+%save images to rcic_data file for later export %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%remove inverse image info, if not needed
+if ~(cfg.symm), stim{2} = []; end
+
+%add stimulus image to datafile
+save(fullfile(cfg.root, 'rcic_data.mat'), 'stim', '-append');
+
+%close waitbar
+close(wbh);
+
+fprintf('Done!\n');
+
+%write images to disk %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if (cfg.genImg) 
+    %export noisy stim images
+    rcic_export_images(fullfile(cfg.root, 'rcic_data.mat'), stim_dir, 'stim');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

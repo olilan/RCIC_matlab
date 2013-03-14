@@ -27,6 +27,9 @@ cfg = join_configs(defaults, cfg);
     'Select data files to import', fullfile(cfg.root, cfg.data_dir), ...
     'MultiSelect', 'on');
 
+%keep record of full datafile paths
+datafiles = cellfun(@(x) fullfile(cfg.data_dir, x), fname);
+
 %import files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 fprintf('Importing data files...');
@@ -38,14 +41,13 @@ data = cell(length(fname), 1);
 wbh = waitbar(0, 'Importing data');
 drawnow;
 
-for f = 1 : length(fname) %loop over data files
+for f = 1 : length(datafiles) %loop over data files
     
     %read csv file with header
-    data{f} = dataset('File', fullfile(cfg.data_dir, fname{f}), ...
-        'delimiter', cfg.delim);
+    data{f} = dataset('File', datafiles{f}, 'delimiter', cfg.delim);
     
     %add file source
-    data{f}.Properties.Description = fullfile(cfg.data_dir, fname{f});
+    data{f}.Properties.Description = datafiles{f};
     
     %sort in order of stimulus sequence number
     data{f} = sortrows(data{f}, cfg.stim_col);
@@ -76,6 +78,7 @@ fprintf('Adding data to rcic_data.mat...');
 import_cfg = cfg;
 
 %save data
-save(fullfile(cfg.root, 'rcic_data.mat'), 'data', 'import_cfg', '-append');
+save(fullfile(cfg.root, 'rcic_data.mat'), ...
+    'datafiles', 'data', 'import_cfg', '-append');
 
 fprintf('Done!\n');
