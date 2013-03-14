@@ -12,6 +12,7 @@ function rcic_calc_average_contrasts(cfg)
 defaults = struct( ...
     'root', pwd, ...                        %root directory
     'resp_col', 'Response', ...             %column name of response column
+    'stim_col', 'StimNr', ...               %name of stimulus number column
     'cond', {{'Condition1', {1}}} ...       %condition definition
     );
 
@@ -42,18 +43,24 @@ for p = 1 : nrP %loop over participants
         %get index of trials matching condition
         idx1 = find_matching(data{p}.(cfg.resp_col), cfg.cond{c}{2});
         
+        %get image numbers of those trials
+        nr1 = data{p}.(cfg.stim_col)(idx1);
+        
         if (length(cfg.cond{c}) == 2) %only one condition
             
             %calculate mean parameters
-            m_par(:, c, p) = mean(contrast(:, idx1), 2);
+            m_par(:, c, p) = mean(contrast(:, nr1), 2);
             
         else %difference between conditions
             
             %get index of trials matching complement condition
             idx2 = find_matching(data{p}.(cfg.resp_col), cfg.cond{c}{3});
             
+            %get image numbers of those trials
+            nr2 = data{p}.(cfg.stim_col)(idx2);
+            
             %calculate mean difference parameters
-            m_par(:, c, p) = mean([contrast(:, idx1) -contrast(:, idx2)], 2);
+            m_par(:, c, p) = mean([contrast(:, nr1) -contrast(:, nr2)], 2);
         end
     end
 end

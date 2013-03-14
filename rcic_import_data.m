@@ -14,7 +14,6 @@ function rcic_import_data(cfg)
 defaults = struct( ...
     'root', pwd, ...                %root directory
     'data_dir', 'data', ...         %directory containing data
-    'stim_col', 'StimNr', ...       %name of stimulus number column
     'delim', ',' ...                %data colum delimiter
     );
 
@@ -56,9 +55,6 @@ for f = 1 : length(datafiles) %loop over data files
     
     %add file source
     data{f}.Properties.Description = datafiles{f};
-    
-    %sort in order of stimulus sequence number
-    data{f} = sortrows(data{f}, cfg.stim_col);
     
     %update waitbar
     waitbar(f / length(fname), wbh);
