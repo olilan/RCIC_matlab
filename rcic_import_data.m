@@ -28,7 +28,8 @@ cfg = join_configs(defaults, cfg);
     'MultiSelect', 'on');
 
 %keep record of full datafile paths
-datafiles = cellfun(@(x) fullfile(cfg.data_dir, x), fname);
+datafiles = cellfun(@(x) fullfile(cfg.data_dir, x), fname,...
+    'UniformOutput', false);
 
 %import files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -33,7 +33,7 @@ load(fullfile(cfg.root, 'rcic_data.mat'), ...
 %visualize reversed classification images %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %get condition labels
-cLabel = cellfun(@(x) x{1}, avg_cfg.cond);
+cLabel = cellfun(@(x) x{1}, avg_cfg.cond, 'UniformOutput', false);
 
 %preallocate memory for CIs
 CIs.img = zeros([size(img) nrP], 'uint8');
@@ -56,8 +56,11 @@ for p = 1 : nrP %loop over participant files
         ci = (1 - cfg.nWeight) * img + cfg.nWeight * sinW;
         CIs{c}.img(:,:,p) = norm_gsimage_lm(ci, 128, 127);
         
+        %get datafile name for CI naming
+        [~, dataname, ~] = fileparts(datafiles{p});
+        
         %make filename for image
-        CIs{c}.name{p} = sprintf('CI_%s_%s.bmp', datafiles{p}, cLabel{c});
+        CIs{c}.name{p} = sprintf('CI_%s_%s.bmp', dataname, cLabel{c});
     end
 end
 
@@ -67,7 +70,7 @@ end
 vis_cfg = cfg;
 
 %store data
-save(fullfile(cfg.root, 'rcic_data.m'), 'vis_cfg', 'CIs', '-append');
+save(fullfile(cfg.root, 'rcic_data.mat'), 'vis_cfg', 'CIs', '-append');
 
 %write CIs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
