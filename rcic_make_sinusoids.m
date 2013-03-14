@@ -1,60 +1,75 @@
-function [sinusoids, sinIdx] = rcic_make_sinusoids(img_s)
-% function [sinusoids, sinIdx] = rcic_make_sinusoids(img_s)
+function [sinusoids, sinIdx, cfg] = rcic_make_sinusoids(img_s, varargin)
+% function [sinusoids, sinIdx, cfg] = rcic_make_sinusoids(img_s)
 %
 % The function generates a big array of sinusoids with different cycles,
 % orientations and phases. Furhter, it generates a matrix of the same size
 % with indexing number for each individual sinusoid pattern.
 %
-% ex.call: [sinusoids, sinIdx] = rcic_make_sinusoids([512 512]);
+% ex.call: [sinusoids, sinIdx, sin_cfg] = rcic_make_sinusoids([512 512]);
 
 %settings for sinusoid generation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%sinusoid cycles
-cycles = [1 2 4 8 16]';
+%check, if we got configs
+if ~isempty(varargin)
+    cfg = varargin{1};
+else
+    cfg = struct();
+end
 
-%sinusoid orientations
-ori = [0 30 60 90 120 150]';
+%define defaults for configs
+defaults = struct( ...
+    'patches', [1 2 4 8 16], ...        %nr of patches in x- and y-direction
+    'cycles', 2, ...                    %cycles of sinusoids per patch
+    'ori', [0 30 60 90 120 150], ...    %sinusoid orientations
+    'phases', [0 pi/2] ...              %sinusoid phases
+    );
 
-%sinusoid phases
-phases = [0 pi/2]';
+%set defaults not defined in cfg
+cfg = join_configs(defaults, cfg);
 
-%size of sinusoids per cycle
-[junk{1}, junk{2}] = meshgrid(img_s, cycles);
+%set type info, in case we support multiple noises
+cfg.type = 'sinusoid';
+
+%prepare data for sinusoids %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%size of patches per patch-level
+[junk{1}, junk{2}] = meshgrid(img_s, cfg.patches);
 sinSize = junk{1} ./ junk{2};
 
 %number of sinusoid images
-nrSin = length(cycles) * length(ori) * length(phases);
+nrSin = length(cfg.patches) * length(cfg.ori) * length(cfg.phases);
 
 %preallocate memory for sinusoid and contrast indexing
-sinusoids = zeros(img_s(1), img_s(2), nrSin);
-sinIdx = zeros(img_s(1), img_s(2), nrSin);
+sinusoids = zeros([img_s nrSin]);
+sinIdx = zeros([img_s nrSin]);
 
 %global counters
 co = 1; %sinusoid layer counter
 idx = 1; %contrast index counter
 
-for c = 1 : length(cycles) %loop over cycles
-    for o = 1 : length(ori) %loop over orientations
-        for p = 1 : length(phases) %loop over phases
+for p = 1 : length(cfg.patches) %loop over patches
+    for o = 1 : length(cfg.ori) %loop over orientations
+        for ph = 1 : length(cfg.phases) %loop over phases
             
             %make sinusoid %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
             %create sinusoid
-            s = gen_sinusoid(sinSize(c, :), 2, ori(o), phases(p), 1);
+            s = gen_sinusoid(sinSize(p, :), cfg.cycles, cfg.ori(o), ...
+                cfg.phases(ph), 1);
             
             %repeat sinusoid to fill image
-            sinusoids(:, :, co) = repmat(s, [cycles(c) cycles(c)]);
+            sinusoids(:, :, co) = repmat(s, cfg.patches(p));
             
             %create index matrix %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
-            for col = 1 : cycles(c)
-                for row = 1 : cycles(c)
+            for col = 1 : cfg.patches(p)
+                for row = 1 : cfg.patches(p)
                     
                     %make vertical index
-                    vert = sinSize(c,1) * (row-1) + 1 : sinSize(c,1) * row;
+                    vert = sinSize(p,1) * (row-1) + 1 : sinSize(p,1) * row;
                     
                     %make horizontal index
-                    horz = sinSize(c,2) * (col-1) + 1 : sinSize(c,2) * col;
+                    horz = sinSize(p,2) * (col-1) + 1 : sinSize(p,2) * col;
                     
                     %insert absolute index for later contrast weighting
                     sinIdx(vert, horz, co) = idx;

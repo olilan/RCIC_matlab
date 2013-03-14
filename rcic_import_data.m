@@ -23,9 +23,16 @@ cfg = join_configs(defaults, cfg);
 
 %let user choose the files to import %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%show dialog for choosing data files
 [fname, cfg.data_dir] = uigetfile({'*.csv','CSV Files'}, ...
     'Select data files to import', fullfile(cfg.root, cfg.data_dir), ...
     'MultiSelect', 'on');
+
+%check, if cancelled
+if isequal(fname, 0), error('No data files picked!'); end
+
+%make sure, fname is cellarray
+fname = cellstr(fname);
 
 %keep record of full datafile paths
 datafiles = cellfun(@(x) fullfile(cfg.data_dir, x), fname,...

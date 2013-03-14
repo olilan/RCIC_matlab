@@ -7,7 +7,7 @@ function rcic_generate_stimuli(cfg)
 % by the user. For each stimulus, two images are generated, ones with the
 % sinusoid noise added, and once with the inverted sinusoid noise added.
 %
-% example call: rcic_generate_stimuli([]);
+% example call: rcic_generate_stimuli(struct());
 
 %check configuration parameters and set defaults %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -39,7 +39,7 @@ if ~isfield(cfg, 'bf')
         'Pick Base Face Image', cfg.root);
     
     %user picked no image
-    if (fname == 0), error('No base face picked!\n'); end
+    if isequal(fname, 0), error('No base face picked!\n'); end
     
     %store full path to base face
     cfg.bf = fullfile(fpath, fname);
@@ -57,7 +57,7 @@ if ~isfield(cfg, 'mask')
         'Pick Mask Image', cfg.root);
     
     %user picked no mask
-    if (fname == 0), error('No mask image picked!\n'); end
+    if isequal(fname, 0), error('No mask image picked!\n'); end
         
     %store full path to mask image
     cfg.mask = fullfile(fpath, fname);
@@ -139,7 +139,7 @@ fprintf('Done!\n');
 fprintf('Generating sinusoids...');
 
 %generate sinusoids and indices
-[sinusoids, sinIdx] = rcic_make_sinusoids(cfg.imgS);
+[sinusoids, sinIdx, cfg.noise_cfg] = rcic_make_sinusoids(cfg.imgS);
 
 fprintf('Done!\n');
 
