@@ -76,8 +76,13 @@ fprintf('Done!\n');
 
 function [idx] = find_matching(data, cond_resp)
 
-%get fit of actual and desired responses
-tmp = cellfun(@(x) data == x, cond_resp, 'UniformOutput', false);
+if isnumeric(data)
+    %get fit of actual and desired responses (using numbers)
+    tmp = cellfun(@(x) data == x, cond_resp, 'UniformOutput', false);
+else
+    %get fit of actual and desired responses (trying strings)
+    tmp = cellfun(@(x) strcmp(x, data), cond_resp, 'UniformOutput', false);
+end
 
 %get index of trials with at least one matching response
 idx = any(cat(2, tmp{:}), 2);
