@@ -108,11 +108,11 @@ end
 if (cfg.blur)
     %blur base face with kernel
     img = imfilter(img, fspecial('gaussian', 10, 10));
-    fprint('blurred...');
+    fprintf('blurred...');
 end
 
 %scale to range 0-1
-img = (img - min(img(:))) / range(img(:));
+img = (img - min(img(:))) / (max(img(:)) - min(img(:)));
 fprintf('normalized...');
 
 fprintf('Done!\n');

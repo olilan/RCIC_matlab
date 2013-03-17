@@ -50,7 +50,7 @@ for p = 1 : nrP %loop over participant files
         sinW = mean(sinusoids .* curr_par(sinIdx), 3);
         
         %scale noise constant to 0-1
-        sinW = (sinW - min(sinW(:))) / range(sinW(:));
+        sinW = (sinW - min(sinW(:))) / (max(sinW(:)) - min(sinW(:)));
         
         %combine noise and image to CI, then normalize CI
         ci = (1 - cfg.nWeight) * img + cfg.nWeight * sinW;

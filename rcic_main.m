@@ -31,7 +31,6 @@ rcic_generate_stimuli(gen_cfg);
 import_cfg = struct( ...
     'root', root, ...               %root directory
     'data_dir', 'data', ...         %path to data directory
-    'stim_col', 'StimNr', ...       %column name of stimulus number column
     'delim', ',' ...                %column delimiter in data file
     );
 
@@ -43,7 +42,8 @@ rcic_import_data(import_cfg);
 %make config settings for calculating averages
 avg_cfg = struct( ...
     'root', root, ...               %root directory
-    'resp_col', 'Response' ...      %name of response column in datasets
+    'resp_col', 'Response', ...      %name of response column in datasets
+    'stim_col', 'ImageNr' ...       %column name of stimulus number column
     );
 
 %conditions to calculate averages for; each row is one average; first column

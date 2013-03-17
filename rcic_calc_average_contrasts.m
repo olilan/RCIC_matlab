@@ -12,7 +12,7 @@ function rcic_calc_average_contrasts(cfg)
 defaults = struct( ...
     'root', pwd, ...                        %root directory
     'resp_col', 'Response', ...             %column name of response column
-    'stim_col', 'StimNr', ...               %name of stimulus number column
+    'stim_col', 'ImageNr', ...               %name of stimulus number column
     'cond', {{'Condition1', {1}}} ...       %condition definition
     );
 
@@ -40,11 +40,15 @@ m_par = zeros(size(contrast, 1), nrC, nrP);
 for p = 1 : nrP %loop over participants
     for c = 1 : nrC %loop over conditions
         
+        %get index of stimulus and trial columns
+        respIdx = find(strcmp(cfg.resp_col, data{p}.header));
+        stimIdx = find(strcmp(cfg.stim_col, data{p}.header));
+        
         %get index of trials matching condition
-        idx1 = find_matching(data{p}.(cfg.resp_col), cfg.cond{c}{2});
+        idx1 = find_matching(data{p}.data(:, respIdx), cfg.cond{c}{2});
         
         %get image numbers of those trials
-        nr1 = data{p}.(cfg.stim_col)(idx1);
+        nr1 = cell2mat(data{p}.data(idx1, stimIdx));
         
         if (length(cfg.cond{c}) == 2) %only one condition
             
@@ -54,10 +58,10 @@ for p = 1 : nrP %loop over participants
         else %difference between conditions
             
             %get index of trials matching complement condition
-            idx2 = find_matching(data{p}.(cfg.resp_col), cfg.cond{c}{3});
+            idx2 = find_matching(data{p}.data(:, respIdx), cfg.cond{c}{3});
             
             %get image numbers of those trials
-            nr2 = data{p}.(cfg.stim_col)(idx2);
+            nr2 = cell2mat(data{p}.data(idx2, stimIdx));
             
             %calculate mean difference parameters
             m_par(:, c, p) = mean([contrast(:, nr1) -contrast(:, nr2)], 2);
@@ -83,9 +87,10 @@ fprintf('Done!\n');
 
 function [idx] = find_matching(data, cond_resp)
 
-if isnumeric(data)
+if isnumeric(data{1})
     %get fit of actual and desired responses (using numbers)
-    tmp = cellfun(@(x) data == x, cond_resp, 'UniformOutput', false);
+    tmp = cellfun(@(x) cell2mat(data) == x, cond_resp, ...
+        'UniformOutput', false);
 else
     %get fit of actual and desired responses (trying strings)
     tmp = cellfun(@(x) strcmp(x, data), cond_resp, 'UniformOutput', false);

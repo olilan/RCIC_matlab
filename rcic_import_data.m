@@ -50,11 +50,11 @@ drawnow;
 
 for f = 1 : length(datafiles) %loop over data files
     
-    %read csv file with header
-    data{f} = dataset('File', datafiles{f}, 'delimiter', cfg.delim);
+    %store file source
+    data{f}.file = datafiles{f};
     
-    %add file source
-    data{f}.Properties.Description = datafiles{f};
+    %get header and data
+    [data{f}.data, data{f}.header] = load_csv(datafiles{f}, cfg.delim);
     
     %update waitbar
     waitbar(f / length(fname), wbh);
@@ -68,7 +68,7 @@ fprintf('Done!\n');
 %simple data check %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %get number of trials for each dataset
-tmp = cellfun(@length, data);
+tmp = cellfun(@(x) size(x.data, 1), data);
 
 if ~(all(tmp == tmp(1)))
     fprintf('Not all datasets have the same number of trials!\n');
@@ -86,3 +86,39 @@ save(fullfile(cfg.root, 'rcic_data.mat'), ...
     'datafiles', 'data', 'import_cfg', '-append');
 
 fprintf('Done!\n');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [D, header] = load_csv(fname, delim)
+% function [D, header] = load_csv(fname, delim)
+%
+% Function for importing csv-data with mixed data types (strings, numbers).
+
+%open file
+fid = fopen(fname, 'r');
+
+%read first line
+fl = textscan(fid, '%s', 1);
+
+%get number of columns
+nrC = length(strfind(fl{1}{1}, delim)) + 1;
+
+%make format string
+format = repmat('%s', 1, nrC);
+
+%rescan header
+header = textscan(fl{1}{1}, format, 'Delimiter', delim);
+header = cat(2, header{:});
+
+%read all data and concatenate to one cell array
+D = textscan(fid, format, 'Delimiter', delim);
+D = cat(2, D{:});
+
+%close file after reading
+fclose(fid);
+
+%find numeric columns
+idx = ~isnan(cellfun(@(x) str2double(x), D(1,:)));
+
+%convert numeric columns
+D(:, idx) = num2cell(cellfun(@(x) str2double(x), D(:, idx)));
