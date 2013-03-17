@@ -25,7 +25,7 @@ cfg = join_configs(defaults, cfg);
 
 %load needed data
 load(fullfile(cfg.root, 'rcic_data.mat'), ...
-    'm_par', 'avg_cfg', 'datafiles', 'data', 'img', 'sinIdx', 'sinusoids');
+    'm_par', 'avg_cfg', 'datafiles', 'img', 'sinIdx', 'sinusoids');
 
 %get number of conditions and participants
 [~, nrC, nrP] = size(m_par);
@@ -107,10 +107,3 @@ if (cfg.plot)
         end
     end
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [name] = get_name(data)
-
-%split path and keep only filename
-[~, name, ~] = fileparts(data.Properties.Description);
