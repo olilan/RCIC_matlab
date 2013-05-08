@@ -8,6 +8,23 @@ function img_norm = norm_gsimage_lm(img, d_mean, d_max, varargin)
 % replaces it by color bgcol.
 %
 % ex. call: img_norm = norm_gsimage_lm(img, 128, 127, maskl, 10);
+%
+% ----------------------------------------------------------------------------
+% Copyright (C) 2013, Oliver Langner and Ron Dotsch
+%
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the Eclipse Public License as published by
+% the Eclipse Foundation, version 1.0.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% Eclipse Public License for more details.
+%
+% You should have received a copy of the Eclipse Public License
+% along with this program.  If not, see
+% http://www.eclipse.org/legal/epl-v10.html
+% ----------------------------------------------------------------------------
 
 %look for provided parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
