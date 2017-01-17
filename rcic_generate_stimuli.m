@@ -115,9 +115,9 @@ end
 fprintf('Loading base face image %s...', cfg.bf);
 
 %load base face
-img = double(imread(cfg.bf));
+img = imread(cfg.bf);
 
-if (ndims(img) > 2)
+if (ismatrix(img) ==0)
     %make grayscale if necessary
     img = rgb2gray(img);
 end
@@ -128,7 +128,8 @@ if (cfg.blur)
     fprintf('blurred...');
 end
 
-%scale to range 0-1
+%change to double and scale to range 0-1
+img = double(img);
 img = (img - min(img(:))) / (max(img(:)) - min(img(:)));
 fprintf('normalized...');
 
